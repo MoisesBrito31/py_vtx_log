@@ -1,11 +1,11 @@
 <template>
     <div>   
-        <canvas id="chart"></canvas>
+        <canvas id="painel"></canvas>
     </div>
 </template>
 
 <script>
-import Chart from 'chart.js'
+import Chart from 'chart.js/auto'
 export default {
     name: "chart",
     created(){
@@ -21,6 +21,10 @@ export default {
                     labels: [],
                     datasets: [],
                 }
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
             },
             chart:{},
             chartColors:['#6A5ACD','#00FA9A','#32CD32',
@@ -65,8 +69,8 @@ export default {
             var retorno = this.get_dataset(this.data,this.labels)
             this.config.data.datasets = retorno[0]
             this.config.data.labels = retorno[1]
-            var ctx = document.getElementById("chart")
-			this.chart = new Chart(ctx, this.config)
+            var ctx = document.getElementById("painel").getContext("2d")
+            this.chart = new Chart(ctx, this.config)
         },
         get_dataset(data,label){
             var dataset_conj=[]

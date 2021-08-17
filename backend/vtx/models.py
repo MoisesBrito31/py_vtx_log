@@ -67,3 +67,16 @@ class Hist(models.Model):
     def __str__(self):
         return f'Registro de {self.date}'
 
+class Evento(models.Model):
+    date = models.DateTimeField('Data',auto_now_add=True)
+    node = models.ForeignKey(Node,on_delete=models.CASCADE)
+    descricao = models.CharField('Evento',max_length=50,default="generico")
+    tipo = models.CharField('tipo de Evento',max_length=50,default="Evento")
+
+    class Meta:
+        verbose_name="Evento"
+        verbose_name_plural="Eventos"
+
+    def __str__(self):
+        return f'Evento de {self.descricao}'
+

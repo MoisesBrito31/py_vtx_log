@@ -12,6 +12,7 @@
       <b-navbar-nav>
         <b-nav-item><router-link to="/">Fabrica</router-link></b-nav-item>
         <b-nav-item><router-link to="/hist">histórico</router-link></b-nav-item>
+        <b-nav-item><router-link to="/eventos">Eventos</router-link></b-nav-item>
       </b-navbar-nav>
 
       <!-- Right aligned nav items -->

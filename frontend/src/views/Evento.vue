@@ -4,7 +4,7 @@
         <b-container fluid>
         <div class="card-title mt-5 mb-3 pt-3">
             <div class="row">
-                <div class="col text-left"><h2>Histórico</h2></div>    
+                <div class="col text-left"><h2>Histórico de Eventos</h2></div>    
             </div>
         </div>
         <hr>
@@ -20,15 +20,12 @@
             </b-col>
         </b-row>  
 
-        <div class="text-center">
+         <div class="text-center">
             <b-table responsive :fields="campos" :items="items" 
                 head-variant="dark" sticky-header="400px">
             </b-table>
         </div>
-
-        <div >
-            <chart ref="chart" :data="items" labels="hora"></chart>
-        </div>
+        
 
         </b-container>
     </div>
@@ -37,13 +34,11 @@
 <script>
 import mainmenu from '@/components/main_menu.vue'
 import input_datetime from '@/components/dataTime.vue'
-import chart from '@/components/chart.vue'
 export default {
     name:'HistoricoView',
     components: {
     mainmenu,
     input_datetime,
-    chart,
     },
     created(){
             this.load()
@@ -54,7 +49,7 @@ export default {
                 ini:"",
                 fim:"",
                 dataCheck:false,
-                campos:["hora","Eixo x","Eixo Z","Temperatura","Alerta X","Alerta Z","Alerta Temper."],
+                campos:["hora","Node","Tipo","Evento"],
                 items:[],
             }
         },
@@ -70,7 +65,7 @@ export default {
                 return formData
             },
             async filtra(){
-                fetch(`/filtra/`,{
+                fetch(`/eventos/`,{
                     method: 'post',
                     headers: {
                         'X-CSRFToken': this.getCookie('csrftoken'),
@@ -86,7 +81,6 @@ export default {
                 }
             }).then(result=>{
                  this.items = result
-                 this.$refs.chart.refresh(this.items,"hora")
             }).catch(erro=>{
                 console.log(erro)
             })

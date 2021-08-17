@@ -15,6 +15,11 @@ const routes = [
     name: 'HistoricoView',
     component: () => import('../views/Historico.vue')
   },
+  {
+    path: '/eventos',
+    name: 'EventosView',
+    component: () => import('../views/Evento.vue')
+  },
 ]
 
 const router = new VueRouter({

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Gateway, Node, NodeSetup, Hist
+from .models import Gateway, Node, NodeSetup, Hist, Evento
 
 @admin.register(Gateway)
 class GatewayAdmin(admin.ModelAdmin):
@@ -16,3 +16,7 @@ class NodeSetupAdmin(admin.ModelAdmin):
 @admin.register(Hist)
 class HistAdmin(admin.ModelAdmin):
     list_display = ('node','date','vibraX','vibraZ','temp')
+
+@admin.register(Evento)
+class EventoAdmin(admin.ModelAdmin):
+    list_display = ('node','date','tipo','descricao')

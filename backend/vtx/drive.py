@@ -1,6 +1,6 @@
 
 from pymodbus.client.sync import ModbusSerialClient as Modbus
-from .models import Gateway, Hist, Node, NodeSetup
+from .models import Gateway, Hist, Node, NodeSetup, Evento
 from time import sleep
 from threading import Thread
 from datetime import datetime, timedelta
@@ -34,15 +34,27 @@ class Servico():
                 n.temp = self.dxm.read_holding_registers(setup.addrTemp-1,1,unit=setup.address).registers[0]/20
                 if n.vibraX==0.000 and n.vibraZ==0.000 and n.temp==0.0:
                     n.online = False
+                    e = Evento(node=n,descricao="Node OffLine", tipo="Falha")
+                    e.save()
                 else:
+                    if n.online == False:
+                        e = Evento(node=n,descricao="Node Restabelecido", tipo="Evento")
+                        e.save()
                     n.online = True
+                if n.estado!="falha":
+                    if n.vibraX>setup.alertVibraX or n.vibraZ>setup.alertVibraZ or n.temp>setup.alertTemp:
+                        n.estado = "alerta"
+                    else:
+                        n.estado = "OK"
                 n.save()
+            self.gate = Gateway.objects.all()[0]
             self.gate.online = True
             self.gate.save()
             sleep(1)
             return True
         except Exception as ex:
             print(f'falha na leitura 2 - {str(ex)}')
+            self.gate = Gateway.objects.all()[0]
             self.gate.online = False
             self.gate.save()
             sleep(2)
@@ -54,7 +66,7 @@ class Servico():
                 self.statusTcp = 'dxm OnLine'
             else:
                 self.statusTcp = 'dxm OffLine'
-                sleep(3)
+                sleep(5)
        
     def _setupTCP(self):
         print('setupTcp...')
@@ -99,9 +111,14 @@ class Ciclo():
     def cicloLog(self):
         sleep(10)
         time = 0
+        lastEvenX = False
+        lastEvenZ = False
+        lastEvenTemp = False
+        score = 0
         while self.ctl_log:
-            setup = NodeSetup.objects.get(id=self.node.id)
-            print(f'time: {time}, alvo:{setup.ciclo}')
+            n = self.node
+            setup = NodeSetup.objects.get(id=n.id)
+            #print(f'time: {time}, alvo:{setup.ciclo}')
             if time > setup.ciclo:
                 h = Hist(
                     node=self.node,vibraX=self.node.vibraX,
@@ -109,8 +126,56 @@ class Ciclo():
                     alertVibraX= setup.alertVibraX, alertVibraZ= setup.alertVibraZ,
                     alertTemp= setup.alertTemp
                 )
+                if n.vibraX>setup.alertVibraX:
+                    score+=1
+                    if not lastEvenX:
+                        e = Evento(node=n,descricao="Vibração eixo X Alta", tipo="Alerta")
+                        e.save()
+                        lastEvenX=True
+                        score+=10
+                else:
+                    if lastEvenX:
+                        e = Evento(node=n,descricao="Vibração eixo X Normalizada", tipo="Evento")
+                        e.save()
+                    lastEvenX=False
+                    score-=1
+                if n.vibraZ>setup.alertVibraZ: 
+                    score+=3
+                    if not lastEvenZ:
+                        e = Evento(node=n,descricao="Vibração eixo Z Alta", tipo="Alerta")
+                        e.save()
+                        lastEvenZ=True
+                        score+=10
+                else:
+                    if lastEvenZ:
+                        e = Evento(node=n,descricao="Vibração eixo Z Normalizada", tipo="Evento")
+                        e.save()
+                    lastEvenZ=False
+                    score-=1
+                if n.temp>setup.alertTemp:
+                    score+=3
+                    if not lastEvenTemp:
+                        e = Evento(node=n,descricao="Temperatura Alta", tipo="Alerta")
+                        e.save()
+                        lastEvenTemp=True
+                        score+=10
+                else:
+                    if lastEvenTemp:
+                        e = Evento(node=n,descricao="Temperatura Normalizada", tipo="Evento")
+                        e.save()
+                    lastEvenTemp=False
+                    score-=3
+                n.save()
                 h.save()
                 time=0 
+            print(f'score: {score}')
+            if score>=20:
+                n.estado = "falha"
+                score=20
+            if score<0:
+                score=0
+                if n.estado == "falha":
+                    n.estado = "alerta"
             time+=1
             sleep(1)
 

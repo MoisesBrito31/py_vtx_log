@@ -2,8 +2,10 @@ from django.shortcuts import render,HttpResponse
 from django.views.generic import View
 import json
 from .drive import *
-from .models import Gateway, Node, NodeSetup, Hist
+from .models import Gateway, Node, NodeSetup, Hist, Evento
 from django.db.models import Q
+from datetime import datetime, timedelta
+
 
 class IndexView(View):
     def get(self,request):
@@ -23,14 +25,18 @@ class Filtra(View):
     def post(self,request):
         inis = str(request.POST['ini'])
         fims = str(request.POST['fim'])
+        print(f'{inis}')
+        print(f'{fims}')
         iniDA=inis.split('T')[0].split('-')
         iniTA=inis.split('T')[1].split(':')
         fimDA=fims.split('T')[0].split('-')
         fimTA=fims.split('T')[1].split(':')
         ini = datetime(int(iniDA[0]),int(iniDA[1]),int(iniDA[2]),int(iniTA[0]),int(iniTA[1]),0)
         fim = datetime(int(fimDA[0]),int(fimDA[1]),int(fimDA[2]),int(fimTA[0]),int(fimTA[1]),0)
-        print('ini')
-        print('fim')
+        ini += timedelta(hours=3)
+        fim += timedelta(hours=3)
+        print(f'{ini}')
+        print(f'{fim}')
         dadof = Hist.objects.filter(Q(date__gt=ini) & Q(date__lt=fim)).order_by('date')
         strinfy = ""
         
@@ -40,6 +46,34 @@ class Filtra(View):
                 hora+=23  
             hf.date = f'{hora}:{hf.date.minute} {hf.date.day}/{hf.date.month}/{hf.date.year}'
             strinfy = f'{strinfy}{{"hora":"{hf.date}","Eixo x":{hf.vibraX},"Eixo Z":{hf.vibraZ},"Temperatura":{hf.temp},"Alerta X":{hf.alertVibraX},"Alerta Z":{hf.alertVibraZ},"Alerta Temper.":{hf.alertTemp}}},'
+        strinfy = "[" + strinfy[:len(strinfy)-1] + "]"
+        return HttpResponse(strinfy)
+
+class Eventos(View):
+    def post(self,request):
+        inis = str(request.POST['ini'])
+        fims = str(request.POST['fim'])
+        print(f'{inis}')
+        print(f'{fims}')
+        iniDA=inis.split('T')[0].split('-')
+        iniTA=inis.split('T')[1].split(':')
+        fimDA=fims.split('T')[0].split('-')
+        fimTA=fims.split('T')[1].split(':')
+        ini = datetime(int(iniDA[0]),int(iniDA[1]),int(iniDA[2]),int(iniTA[0]),int(iniTA[1]),0)
+        fim = datetime(int(fimDA[0]),int(fimDA[1]),int(fimDA[2]),int(fimTA[0]),int(fimTA[1]),0)
+        ini += timedelta(hours=3)
+        fim += timedelta(hours=3)
+        print(f'{ini}')
+        print(f'{fim}')
+        dadof = Evento.objects.filter(Q(date__gt=ini) & Q(date__lt=fim)).order_by('date')
+        strinfy = ""
+        
+        for hf in dadof:
+            hora = int(hf.date.hour)-3
+            if hora<0:
+                hora+=23  
+            hf.date = f'{hora}:{hf.date.minute} {hf.date.day}/{hf.date.month}/{hf.date.year}'
+            strinfy = f'{strinfy}{{"hora":"{hf.date}","Node":"{hf.node}","Tipo":"{hf.tipo}","Evento":"{hf.descricao}"}},'
         strinfy = "[" + strinfy[:len(strinfy)-1] + "]"
         return HttpResponse(strinfy)
 
