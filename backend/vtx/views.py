@@ -18,7 +18,7 @@ def online(request):
 
 def nodes(request):
     n = Node.objects.all()[0]
-    ret = f'{{"id":{n.id},"name":"{n.name}","estado":"{n.estado}","online":"{n.online}","vibraX":{n.vibraX},"vibraZ":{n.vibraZ},"temp":{n.temp}}}'
+    ret = f'{{"id":{n.id},"name":"{n.name}","estado":"{n.estado}","online":"{n.online}","vibraX":{n.vibraX/1000},"vibraZ":{n.vibraZ/1000},"temp":{n.temp/20}}}'
     return  HttpResponse(ret)
 
 class Filtra(View):
@@ -45,7 +45,7 @@ class Filtra(View):
             if hora<0:
                 hora+=23  
             hf.date = f'{hora}:{hf.date.minute} {hf.date.day}/{hf.date.month}/{hf.date.year}'
-            strinfy = f'{strinfy}{{"hora":"{hf.date}","Eixo x":{hf.vibraX},"Eixo Z":{hf.vibraZ},"Temperatura":{hf.temp},"Alerta X":{hf.alertVibraX},"Alerta Z":{hf.alertVibraZ},"Alerta Temper.":{hf.alertTemp}}},'
+            strinfy = f'{strinfy}{{"hora":"{hf.date}","Eixo x":{hf.vibraX/1000},"Eixo Z":{hf.vibraZ/1000},"Temperatura":{hf.temp/20},"Alerta X":{hf.alertVibraX},"Alerta Z":{hf.alertVibraZ},"Alerta Temper.":{hf.alertTemp}}},'
         strinfy = "[" + strinfy[:len(strinfy)-1] + "]"
         return HttpResponse(strinfy)
 

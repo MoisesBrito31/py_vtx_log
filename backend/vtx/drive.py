@@ -29,20 +29,21 @@ class Servico():
         try:
             for n in self.nodes:
                 setup = NodeSetup.objects.get(id=n.id)
-                n.vibraX = self.dxm.read_holding_registers(setup.addrVibraX-1,1,unit=setup.address).registers[0]/1000
-                n.vibraZ = self.dxm.read_holding_registers(setup.addrVibraZ-1,1,unit=setup.address).registers[0]/1000
-                n.temp = self.dxm.read_holding_registers(setup.addrTemp-1,1,unit=setup.address).registers[0]/20
-                if n.vibraX==0.000 and n.vibraZ==0.000 and n.temp==0.0:
+                n.vibraX = self.dxm.read_holding_registers(setup.addrVibraX-1,1,unit=setup.address).registers[0]
+                n.vibraZ = self.dxm.read_holding_registers(setup.addrVibraZ-1,1,unit=setup.address).registers[0]
+                n.temp = self.dxm.read_holding_registers(setup.addrTemp-1,1,unit=setup.address).registers[0]
+                if n.vibraX==0 and n.vibraZ==0 and n.temp==0:
+                    if n.online:
+                        e = Evento(node=n,descricao="Node OffLine", tipo="Falha")
+                        e.save()
                     n.online = False
-                    e = Evento(node=n,descricao="Node OffLine", tipo="Falha")
-                    e.save()
                 else:
                     if n.online == False:
                         e = Evento(node=n,descricao="Node Restabelecido", tipo="Evento")
                         e.save()
                     n.online = True
                 if n.estado!="falha":
-                    if n.vibraX>setup.alertVibraX or n.vibraZ>setup.alertVibraZ or n.temp>setup.alertTemp:
+                    if n.vibraX>setup.alertVibraX*1000 or n.vibraZ>setup.alertVibraZ*1000 or n.temp>setup.alertTemp*20:
                         n.estado = "alerta"
                     else:
                         n.estado = "OK"
@@ -119,14 +120,14 @@ class Ciclo():
             n = self.node
             setup = NodeSetup.objects.get(id=n.id)
             #print(f'time: {time}, alvo:{setup.ciclo}')
-            if time > setup.ciclo:
+            if time > setup.ciclo and self.node.temp<3000:
                 h = Hist(
                     node=self.node,vibraX=self.node.vibraX,
                     vibraZ= self.node.vibraZ, temp= self.node.temp,
                     alertVibraX= setup.alertVibraX, alertVibraZ= setup.alertVibraZ,
                     alertTemp= setup.alertTemp
                 )
-                if n.vibraX>setup.alertVibraX:
+                if n.vibraX>setup.alertVibraX*1000:
                     score+=1
                     if not lastEvenX:
                         e = Evento(node=n,descricao="Vibração eixo X Alta", tipo="Alerta")
@@ -139,7 +140,7 @@ class Ciclo():
                         e.save()
                     lastEvenX=False
                     score-=1
-                if n.vibraZ>setup.alertVibraZ: 
+                if n.vibraZ>setup.alertVibraZ*1000: 
                     score+=3
                     if not lastEvenZ:
                         e = Evento(node=n,descricao="Vibração eixo Z Alta", tipo="Alerta")
@@ -152,7 +153,7 @@ class Ciclo():
                         e.save()
                     lastEvenZ=False
                     score-=1
-                if n.temp>setup.alertTemp:
+                if n.temp>setup.alertTemp*20:
                     score+=3
                     if not lastEvenTemp:
                         e = Evento(node=n,descricao="Temperatura Alta", tipo="Alerta")
@@ -168,7 +169,7 @@ class Ciclo():
                 n.save()
                 h.save()
                 time=0 
-            print(f'score: {score}')
+            #print(f'score: {score}')
             if score>=20:
                 n.estado = "falha"
                 score=20
