@@ -17,9 +17,9 @@ class Gateway(models.Model):
 
 class Node(models.Model):
     name = models.CharField("Equipamento", max_length=20)
-    vibraX = models.DecimalField("eixo x", default=0.000, decimal_places=3,max_digits=7)
-    vibraZ = models.DecimalField("eixo z", default=0.000, decimal_places=3,max_digits=7)
-    temp = models.DecimalField("Temperatura", default=0.000, decimal_places=1,max_digits=5)
+    vibraX = models.DecimalField("eixo x", default=0.000, decimal_places=3,max_digits=12)
+    vibraZ = models.DecimalField("eixo z", default=0.000, decimal_places=3,max_digits=12)
+    temp = models.DecimalField("Temperatura", default=0.000, decimal_places=1,max_digits=12)
     estado = models.CharField("Estado",max_length=30)
     online = models.BooleanField("Online")
 
@@ -38,9 +38,9 @@ class NodeSetup(models.Model):
     addrVibraX = models.IntegerField("endereço eixo x", default=1)
     addrVibraZ = models.IntegerField("endereço eixo z", default=1)
     addrTemp = models.IntegerField("endereço Temperatura", default=1)
-    alertVibraX = models.DecimalField("Alert eixo x", default=5.000, decimal_places=3,max_digits=7)
-    alertVibraZ = models.DecimalField("Alert eixo z", default=5.000, decimal_places=3,max_digits=7)
-    alertTemp = models.DecimalField("Alert Temperatura", default=60.0, decimal_places=1,max_digits=5)
+    alertVibraX = models.DecimalField("Alert eixo x", default=5.000, decimal_places=3,max_digits=12)
+    alertVibraZ = models.DecimalField("Alert eixo z", default=5.000, decimal_places=3,max_digits=12)
+    alertTemp = models.DecimalField("Alert Temperatura", default=60.0, decimal_places=1,max_digits=12)
 
     class Meta:
         verbose_name="NodeSetup"
@@ -53,12 +53,12 @@ class NodeSetup(models.Model):
 class Hist(models.Model):
     date = models.DateTimeField('Data',auto_now_add=True)
     node = models.ForeignKey(Node,on_delete=models.CASCADE)
-    alertVibraX = models.DecimalField("Alert eixo x", default=5.000, decimal_places=3,max_digits=7)
-    alertVibraZ = models.DecimalField("Alert eixo z", default=5.000, decimal_places=3,max_digits=7)
-    alertTemp = models.DecimalField("Alert Temperatura", default=60.0, decimal_places=1,max_digits=5)
-    vibraX = models.DecimalField("eixo x", default=0.000, decimal_places=3,max_digits=7)
-    vibraZ = models.DecimalField("eixo z", default=0.000, decimal_places=3,max_digits=7)
-    temp = models.DecimalField("Temperatura", default=0.000, decimal_places=1,max_digits=5)
+    alertVibraX = models.DecimalField("Alert eixo x", default=5.000, decimal_places=3,max_digits=12)
+    alertVibraZ = models.DecimalField("Alert eixo z", default=5.000, decimal_places=3,max_digits=12)
+    alertTemp = models.DecimalField("Alert Temperatura", default=60.0, decimal_places=1,max_digits=12)
+    vibraX = models.DecimalField("eixo x", default=0.000, decimal_places=3,max_digits=12)
+    vibraZ = models.DecimalField("eixo z", default=0.000, decimal_places=3,max_digits=12)
+    temp = models.DecimalField("Temperatura", default=0.000, decimal_places=1,max_digits=12)
 
     class Meta:
         verbose_name="Registro"

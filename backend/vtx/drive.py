@@ -1,5 +1,6 @@
 
-from pymodbus.client.sync import ModbusSerialClient as Modbus
+from pymodbus.client.sync import ModbusSerialClient as ModbusSerial
+from pymodbus.client.sync import ModbusTcpClient as ModbusTcp
 from .models import Gateway, Hist, Node, NodeSetup, Evento
 from time import sleep
 from threading import Thread
@@ -32,22 +33,31 @@ class Servico():
                 n.vibraX = self.dxm.read_holding_registers(setup.addrVibraX-1,1,unit=setup.address).registers[0]
                 n.vibraZ = self.dxm.read_holding_registers(setup.addrVibraZ-1,1,unit=setup.address).registers[0]
                 n.temp = self.dxm.read_holding_registers(setup.addrTemp-1,1,unit=setup.address).registers[0]
-                if n.vibraX==0 and n.vibraZ==0 and n.temp==0:
-                    if n.online:
-                        e = Evento(node=n,descricao="Node OffLine", tipo="Falha")
-                        e.save()
-                    n.online = False
+                if n.vibraX == None:
+                    e = Evento(node=n,descricao="Gateway OffLine", tipo="Falha")
+                    e.save()
                 else:
-                    if n.online == False:
-                        e = Evento(node=n,descricao="Node Restabelecido", tipo="Evento")
-                        e.save()
-                    n.online = True
-                if n.estado!="falha":
-                    if n.vibraX>setup.alertVibraX*1000 or n.vibraZ>setup.alertVibraZ*1000 or n.temp>setup.alertTemp*20:
-                        n.estado = "alerta"
+                    if n.vibraX==65535:
+                        n.estado = "Desconectado"
+                        if n.online:
+                            e = Evento(node=n,descricao="Node OffLine", tipo="Falha")
+                            e.save()
+                        n.online = False
                     else:
                         n.estado = "OK"
-                n.save()
+                        if n.online == False:
+                            e = Evento(node=n,descricao="Node Restabelecido", tipo="Evento")
+                            e.save()
+                        n.online = True
+                    if n.estado!="falha":     
+                        alertaVX = setup.alertVibraX*1000   
+                        alertaVZ = setup.alertVibraZ*1000  
+                        alertaT = setup.alertTemp*20
+                        if n.vibraX>alertaVX or n.vibraZ>alertaVZ or n.temp>alertaT:
+                            n.estado = "alerta"
+                        else:
+                            n.estado = "OK"
+                        n.save()
             self.gate = Gateway.objects.all()[0]
             self.gate.online = True
             self.gate.save()
@@ -74,7 +84,10 @@ class Servico():
         self.__controleRead = False
         sleep(4)
         try:
-            self.dxm = Modbus(method="rtu", port=self.gate.port, timeout=1, boudrate=self.gate.boudrate)
+            if self.gate.port.find(".")>0:
+                self.dxm = ModbusTcp(host=self.gate.port, port=502)
+            else:
+                self.dxm = ModbusSerial(method="rtu", port=self.gate.port, timeout=1, boudrate=self.gate.boudrate)
             self.dxm.connect()
             retorno = self.dxm.read_holding_registers(0,1,unit=1)
             if retorno:
@@ -119,15 +132,18 @@ class Ciclo():
         while self.ctl_log:
             n = self.node
             setup = NodeSetup.objects.get(id=n.id)
-            #print(f'time: {time}, alvo:{setup.ciclo}')
+            print(f'time: {time}, alvo:{setup.ciclo}')
+            print(f'lastX: {lastEvenX}, lastZ: {lastEvenZ}, lastT: {lastEvenTemp}')
             if time > setup.ciclo and self.node.temp<3000:
                 h = Hist(
                     node=self.node,vibraX=self.node.vibraX,
                     vibraZ= self.node.vibraZ, temp= self.node.temp,
                     alertVibraX= setup.alertVibraX, alertVibraZ= setup.alertVibraZ,
                     alertTemp= setup.alertTemp
-                )
-                if n.vibraX>setup.alertVibraX*1000:
+                )      
+                h.save()
+                if n.vibraX>setup.alertVibraX*1000 and n.estado != "Desconectado":
+                    print("alerta x")
                     score+=1
                     if not lastEvenX:
                         e = Evento(node=n,descricao="Vibração eixo X Alta", tipo="Alerta")
@@ -140,8 +156,9 @@ class Ciclo():
                         e.save()
                     lastEvenX=False
                     score-=1
-                if n.vibraZ>setup.alertVibraZ*1000: 
+                if n.vibraZ>setup.alertVibraZ*1000 and n.estado != "Desconectado": 
                     score+=3
+                    print("alerta z")
                     if not lastEvenZ:
                         e = Evento(node=n,descricao="Vibração eixo Z Alta", tipo="Alerta")
                         e.save()
@@ -153,8 +170,9 @@ class Ciclo():
                         e.save()
                     lastEvenZ=False
                     score-=1
-                if n.temp>setup.alertTemp*20:
+                if n.temp>setup.alertTemp*20 and n.estado != "Desconectado":
                     score+=3
+                    print("alerta t")
                     if not lastEvenTemp:
                         e = Evento(node=n,descricao="Temperatura Alta", tipo="Alerta")
                         e.save()
@@ -165,18 +183,18 @@ class Ciclo():
                         e = Evento(node=n,descricao="Temperatura Normalizada", tipo="Evento")
                         e.save()
                     lastEvenTemp=False
-                    score-=3
-                n.save()
-                h.save()
+                    score-=3  
                 time=0 
             #print(f'score: {score}')
             if score>=20:
                 n.estado = "falha"
+                n.save()
                 score=20
             if score<0:
                 score=0
                 if n.estado == "falha":
                     n.estado = "alerta"
+                    n.save()
             time+=1
             sleep(1)
 
