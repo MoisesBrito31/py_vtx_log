@@ -40,7 +40,10 @@ class NodeSetup(models.Model):
     addrTemp = models.IntegerField("endereço Temperatura", default=1)
     alertVibraX = models.DecimalField("Alert eixo x", default=5.000, decimal_places=3,max_digits=12)
     alertVibraZ = models.DecimalField("Alert eixo z", default=5.000, decimal_places=3,max_digits=12)
-    alertTemp = models.DecimalField("Alert Temperatura", default=60.0, decimal_places=1,max_digits=12)
+    alertTemp = models.DecimalField("Alert Temperatura", default=50.0, decimal_places=1,max_digits=12)
+    alertVibraX2 = models.DecimalField("Alert eixo x", default=15.000, decimal_places=3,max_digits=12)
+    alertVibraZ2 = models.DecimalField("Alert eixo z", default=15.000, decimal_places=3,max_digits=12)
+    alertTemp2 = models.DecimalField("Alert Temperatura", default=70.00, decimal_places=1,max_digits=12)
 
     class Meta:
         verbose_name="NodeSetup"

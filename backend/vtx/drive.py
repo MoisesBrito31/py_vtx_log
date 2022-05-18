@@ -53,8 +53,14 @@ class Servico():
                         alertaVX = setup.alertVibraX*1000   
                         alertaVZ = setup.alertVibraZ*1000  
                         alertaT = setup.alertTemp*20
+                        alertaVX2 = setup.alertVibraX2*1000   
+                        alertaVZ2 = setup.alertVibraZ2*1000  
+                        alertaT2 = setup.alertTemp2*20
                         if n.vibraX>alertaVX or n.vibraZ>alertaVZ or n.temp>alertaT:
-                            n.estado = "alerta"
+                            if n.vibraX>alertaVX2 or n.vibraZ>alertaVZ2 or n.temp>alertaT2:
+                                n.estado = "falha"
+                            else:
+                                n.estado = "alerta"
                         else:
                             n.estado = "OK"
                         n.save()
@@ -128,6 +134,9 @@ class Ciclo():
         lastEvenX = False
         lastEvenZ = False
         lastEvenTemp = False
+        lastEvenX2 = False
+        lastEvenZ2 = False
+        lastEvenTemp2 = False
         score = 0
         while self.ctl_log:
             n = self.node
@@ -143,49 +152,60 @@ class Ciclo():
                 )      
                 h.save()
                 if n.vibraX>setup.alertVibraX*1000 and n.estado != "Desconectado":
-                    print("alerta x")
-                    score+=1
-                    if not lastEvenX:
-                        e = Evento(node=n,descricao="Vibração eixo X Alta", tipo="Alerta")
-                        e.save()
-                        lastEvenX=True
-                        score+=10
+                    if n.vibraX>setup.alertVibraX2*1000:
+                        if not lastEvenX2:
+                            e = Evento(node=n,descricao="Vibração eixo X Muito Alta", tipo="Falha")
+                            e.save()
+                            lastEvenX=True
+                    else:
+                        if not lastEvenX:
+                            e = Evento(node=n,descricao="Vibração eixo X Alta", tipo="Alerta")
+                            e.save()
+                            lastEvenX=True
                 else:
-                    if lastEvenX:
+                    if lastEvenX or lastEvenX2:
                         e = Evento(node=n,descricao="Vibração eixo X Normalizada", tipo="Evento")
                         e.save()
                     lastEvenX=False
-                    score-=1
+                    lastEvenX2=False
                 if n.vibraZ>setup.alertVibraZ*1000 and n.estado != "Desconectado": 
-                    score+=3
-                    print("alerta z")
-                    if not lastEvenZ:
-                        e = Evento(node=n,descricao="Vibração eixo Z Alta", tipo="Alerta")
-                        e.save()
-                        lastEvenZ=True
-                        score+=10
+                    if n.vibraZ>setup.alertVibraZ2*1000:
+                         if not lastEvenZ2:
+                            e = Evento(node=n,descricao="Vibração eixo Z Muito Alta", tipo="Falha")
+                            e.save()
+                            lastEvenZ=True
+                    else:
+                        if not lastEvenZ:
+                            e = Evento(node=n,descricao="Vibração eixo Z Alta", tipo="Alerta")
+                            e.save()
+                            lastEvenZ=True
                 else:
-                    if lastEvenZ:
+                    if lastEvenZ or lastEvenZ2:
                         e = Evento(node=n,descricao="Vibração eixo Z Normalizada", tipo="Evento")
                         e.save()
                     lastEvenZ=False
-                    score-=1
+                    lastEvenZ2=False
                 if n.temp>setup.alertTemp*20 and n.estado != "Desconectado":
-                    score+=3
-                    print("alerta t")
-                    if not lastEvenTemp:
-                        e = Evento(node=n,descricao="Temperatura Alta", tipo="Alerta")
-                        e.save()
-                        lastEvenTemp=True
-                        score+=10
+                    if n.temp>setup.alertTemp2*20:
+                        if not lastEvenTemp2:
+                            e = Evento(node=n,descricao="Temperatura Muito Alta", tipo="Falha")
+                            e.save()
+                            lastEvenTemp2=True
+                    else:
+                        if not lastEvenTemp:
+                            e = Evento(node=n,descricao="Temperatura Alta", tipo="Alerta")
+                            e.save()
+                            lastEvenTemp=True
                 else:
-                    if lastEvenTemp:
+                    if lastEvenTemp or lastEvenTemp2:
                         e = Evento(node=n,descricao="Temperatura Normalizada", tipo="Evento")
                         e.save()
                     lastEvenTemp=False
-                    score-=3  
+                    lastEvenTemp2=False
                 time=0 
+               
             #print(f'score: {score}')
+            """
             if score>=20:
                 n.estado = "falha"
                 n.save()
@@ -194,7 +214,7 @@ class Ciclo():
                 score=0
                 if n.estado == "falha":
                     n.estado = "alerta"
-                    n.save()
+                    n.save()"""
             time+=1
             sleep(1)
 
